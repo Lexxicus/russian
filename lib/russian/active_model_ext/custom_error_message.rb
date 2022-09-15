@@ -42,23 +42,21 @@ if defined?(ActiveModel::Errors)
       def full_messages
         full_messages = []
 
-        each do |attribute, messages|
-          messages = Array.wrap(messages)
-          next if messages.empty?
+        errors.each do |error|
+          next if error.message.empty?
 
-          if attribute == :base
-            messages.each {|m| full_messages << m }
+          if error.attribute == :base
+            full_messages << error.full_message
           else
-            attr_name = attribute.to_s.gsub('.', '_').humanize
-            attr_name = @base.class.human_attribute_name(attribute, :default => attr_name)
-            options = { :attribute => attr_name, :default => "%{attribute} %{message}" }
+            message = error.message
+            attribute = error.attribute.to_s.gsub('.', '_').humanize
+            attr_name = @base.class.human_attribute_name(attribute, default: attr_name)
+            options = { attribute: attr_name, default: '%{attribute} %{message}' }
 
-            messages.each do |m|
-              if m =~ /^\^/
-                full_messages << m[1..-1]
-              else
-                full_messages << I18n.t(:"errors.format", options.merge(:message => m))
-              end
+            if message =~ /^\^/
+              full_messages << message[1..-1]
+            else
+              full_messages << I18n.t(:"errors.format", **options.merge(message: message))
             end
           end
         end
